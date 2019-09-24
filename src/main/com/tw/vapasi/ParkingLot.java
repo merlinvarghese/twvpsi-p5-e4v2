@@ -1,23 +1,26 @@
 package com.tw.vapasi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 //Understands spaces available to halt a vehicle
 class ParkingLot {
     private List<Vehicle> parkedVehicles;
     private Integer maxCapacity;
-    private ParkingLotListener owner;
+    private List<ParkingLotListener> parkingLotListeners;
 
     ParkingLot(int capacity) {
         this.parkedVehicles = new ArrayList<>();
+        this.parkingLotListeners = new ArrayList<>();
         this.maxCapacity = capacity;
     }
 
-    ParkingLot(int capacity, ParkingLotListener parkingLotOwner) {
+    ParkingLot(int capacity, ParkingLotListener parkingLotListener) {
         this.parkedVehicles = new ArrayList<>();
         this.maxCapacity = capacity;
-        this.owner = parkingLotOwner;
+        this.parkingLotListeners = new ArrayList<>();
+        parkingLotListeners.add(parkingLotListener);
     }
 
     void park(Vehicle vehicle) throws UnableToParkException {
@@ -26,12 +29,8 @@ class ParkingLot {
         }
         parkedVehicles.add(vehicle);
         if (parkedVehicles.size() == maxCapacity) {
-            notifyOwnerParkingIsFull();
+            notifyParkingIsFull();
         }
-    }
-
-    boolean isSlotAvailable() {
-        return parkedVehicles.size() < maxCapacity;
     }
 
     void unPark(Vehicle vehicle) throws UnableToUnparkException {
@@ -44,29 +43,27 @@ class ParkingLot {
         }
         parkedVehicles.remove(vehicle);
         if (parkedVehicles.size() == maxCapacity - 1 && isParkingFull) {
-            notifyOwnerParkingIsAvailable();
+            notifyParkingIsAvailable();
         }
     }
 
-    private void notifyOwnerParkingIsAvailable() {
-        if (this.owner != null) {
-            this.owner.notifyParkingIsAvailable(this);
-        }
+
+    private void notifyParkingIsAvailable() {
+        parkingLotListeners.stream()
+                .forEach((parkingLotListener) -> parkingLotListener.notifyParkingIsAvailable(this));
 
     }
 
-    private void notifyOwnerParkingIsFull() {
-        if (this.owner != null) {
-            this.owner.notifyParkingIsFull(this);
-        }
-
+    private void notifyParkingIsFull() {
+        parkingLotListeners.stream()
+                .forEach((parkingLotListener) -> parkingLotListener.notifyParkingIsFull(this));
     }
 
     boolean isVehicleParked(Vehicle vehicle) {
         return parkedVehicles.contains(vehicle);
     }
 
-    public void registerForParkingNotification(Valet valet) {
-
+    void registerForParkingNotification(Valet valet) {
+        this.parkingLotListeners.add(valet);
     }
 }
